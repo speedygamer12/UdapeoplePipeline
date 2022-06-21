@@ -1,5 +1,9 @@
 version: 2.1
 
+defaults: &defaults
+  docker:
+    - image: circleci/node:13.8.0
+
 jobs:
   build-frontend:
     docker:
@@ -35,6 +39,14 @@ jobs:
           paths: [backend/node_modules]
           key: backend-build
   
+  test-frontend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      # Checkout code from git
+      # Restore from cache
+      # Your job code here
+
 workflows:
 
   my_work_flow:
