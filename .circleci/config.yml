@@ -168,7 +168,7 @@ jobs:
             apk add --update tar
             apk add --update gzip
             apk add --update ansible
-            apk add --update ssh
+            apk add --update openssh
       - run:
           name: Configure server
           command: |
