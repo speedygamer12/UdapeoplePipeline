@@ -196,4 +196,5 @@ workflows:
           requires: [build-backend]
           context: UDAPEOPLE_SLACK
       - deploy-infrastructure
-      - configure-infrastructure
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
