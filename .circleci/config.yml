@@ -171,6 +171,10 @@ jobs:
       - run:
           name: Configure server
           command: |
+            cat ~/project/.circleci/ansible/inventory.txt
+      - run:
+          name: Configure server
+          command: |
             cd ~/project/.circleci/ansible && \
             ansible-playbook -i inventory.txt configure-server.yml
           no_output_timeout: 30m
