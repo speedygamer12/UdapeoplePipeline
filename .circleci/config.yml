@@ -181,8 +181,7 @@ jobs:
           no_output_timeout: 30m
 
   run-migrations:
-    docker:
-      <<: *defaults
+    <<: *defaults
     steps:
       - checkout
       - run:
