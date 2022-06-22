@@ -33,9 +33,3 @@ Outputs:
     Value: !GetAtt WebsiteBucket.WebsiteURL
     Description: URL for website hosted on S3
 
-aws --region us-east-1 \
-  ec2 describe-instances \
-  --filters \
-  "Name=tag:Name,Values=backend-backend-a0efcb6" \
-  --query 'Reservations[*].Instances[*].[PublicIpAddress]' \
-  --output text >> inventory.txt
