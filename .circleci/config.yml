@@ -175,3 +175,4 @@ workflows:
       # - scan-backend:
       #     requires: [build-backend]
       #     context: UDAPEOPLE_SLACK
+      - deploy-infrastructure
