@@ -1,27 +1,27 @@
 version: 2.1
 
+commands:
+  destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    parameters:
+      tag:
+        default: ""
+        type: string
+    steps:
+      - run:
+          name: Destroy environments
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name <<parameters.tag>>-${CIRCLE_WORKFLOW_ID:0:7}
+
 defaults: &defaults
   docker:
     - image: circleci/node:13.8.0
 
 orbs:
-  # node: 'circleci/node:4.1'
   slack: circleci/slack@4.1  
 
 jobs:
-  deploy:
-    executor:
-      name: node/default
-    steps:
-      - checkout
-      - node/install-packages
-      - run:
-          command: npm run deploy
-      # If any of the above steps in this job (such as the deployment) have failed, this Slack notification will send.
-      - slack/notify:
-          event: fail
-          template: basic_fail_1
-          channel: ABCXYZ
 
   build-frontend:
     docker:
@@ -97,23 +97,6 @@ jobs:
             # npm install oauth-sign@^0.9.0
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
-      - slack/notify:
-          event: always
-          custom: |
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "plain_text",
-                      "text": "*This is a text notification*",
-                      "emoji": true
-                    }
-                  ]
-                }
-              ]
-            }
 
   scan-backend:
     <<: *defaults
@@ -126,13 +109,55 @@ jobs:
           command: |
             cd backend
             npm install
-            # npm install oauth-sign@^0.9.0
             npm audit fix --force --audit-level=critical --force
             npm audit --audit-level=critical
       - slack/notify:
           event: fail
           template: basic_fail_1
           channel: udapeople-devops
+        
+  deploy-infrastructure:
+    docker:
+      amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install tar and gzip on image
+          command: |
+            apt install tar && apt instal gzip
+      - run:
+          name: Ensure back-end infrastructure exists
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/backend.yml \
+              --tags project=udapeople
+              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"   
+      - run:
+          name: Ensure front-end infrastructure exist
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/frontend.yml \
+              --tags project=udapeople
+              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+      - run:
+          name: Add back-end ip to ansible inventory
+          command: |
+            aws --region us-east-1 \
+              ec2 describe-instances \
+              --filters \
+              "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].[PublicIpAddress]' \
+              --output text >> inventory.txt
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - project/.circleci/ansible/inventory.txt
+      - destroy-environment:
+          tag: backend
+
+
 
 workflows:
 
@@ -147,6 +172,6 @@ workflows:
       - scan-frontend:
           requires: [build-frontend]
           context: UDAPEOPLE_SLACK
-      - scan-backend:
-          requires: [build-backend]
-          context: UDAPEOPLE_SLACK
+      # - scan-backend:
+      #     requires: [build-backend]
+      #     context: UDAPEOPLE_SLACK
