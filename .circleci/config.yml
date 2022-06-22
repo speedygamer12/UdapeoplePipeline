@@ -95,7 +95,6 @@ jobs:
           command: |
             cd frontend
             npm install
-            # npm install oauth-sign@^0.9.0
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
 
@@ -109,9 +108,8 @@ jobs:
           name: Audit backend
           command: |
             cd backend
-            npm install
-            npm audit fix --force --audit-level=critical --force
-            npm audit --audit-level=critical
+            npm audit fix --audit-level=critical --force
+            # npm audit --audit-level=critical
       - slack/notify:
           event: fail
           template: basic_fail_1
@@ -123,31 +121,31 @@ jobs:
     steps:
       - checkout
       - run: yum install -y tar gzip
-      # - run:
-      #     name: Ensure back-end infrastructure exists
-      #     command: |
-      #       aws cloudformation deploy \
-      #         --template-file .circleci/files/backend.yml \
-      #         --tags project=udapeople \
-      #         --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
-      #         --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"   
-      # - run:
-      #     name: Ensure front-end infrastructure exist
-      #     command: |
-      #       aws cloudformation deploy \
-      #         --template-file .circleci/files/frontend.yml \
-      #         --tags project=udapeople \
-      #         --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7} \
-      #         --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
-      # - run:
-      #     name: Add back-end ip to ansible inventory
-      #     command: |
-      #       aws --region us-east-1 \
-      #         ec2 describe-instances \
-      #         --filters \
-      #         "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-      #         --query 'Reservations[*].Instances[*].[PublicIpAddress]' \
-      #         --output text >> inventory.txt
+      - run:
+          name: Ensure back-end infrastructure exists
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/backend.yml \
+              --tags project=udapeople \
+              --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"   
+      - run:
+          name: Ensure front-end infrastructure exist
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/frontend.yml \
+              --tags project=udapeople \
+              --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7} \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+      - run:
+          name: Add back-end ip to ansible inventory
+          command: |
+            aws --region us-east-1 \
+              ec2 describe-instances \
+              --filters \
+              "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].[PublicIpAddress]' \
+              --output text >> inventory.txt
 
       - persist_to_workspace:
           root: ~/
@@ -173,26 +171,25 @@ jobs:
       - run:
           name: Configure server
           command: |
-              cd .circleci/ansible
-              ansible-playbook -i inventory.txt configure-server.yml
-
-
+            cd ~/project/.circleci/ansible && \
+            ansible-playbook -i inventory.txt configure-server.yml
+          no_output_timeout: 30m
 
 workflows:
 
   my_work_flow:
     jobs:
-      # - build-frontend
-      # - build-backend
-      # - test-frontend:
-      #     requires: [build-frontend]
-      # - test-backend:
-      #     requires: [build-backend]
-      # - scan-frontend:
-      #     requires: [build-frontend]
-      #     context: UDAPEOPLE_SLACK
-      # - scan-backend:
-      #     requires: [build-backend]
-      #     context: UDAPEOPLE_SLACK
+      - build-frontend
+      - build-backend
+      - test-frontend:
+          requires: [build-frontend]
+      - test-backend:
+          requires: [build-backend]
+      - scan-frontend:
+          requires: [build-frontend]
+          context: UDAPEOPLE_SLACK
+      - scan-backend:
+          requires: [build-backend]
+          context: UDAPEOPLE_SLACK
       - deploy-infrastructure
       - configure-infrastructure
