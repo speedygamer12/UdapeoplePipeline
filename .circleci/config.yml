@@ -155,6 +155,27 @@ jobs:
             - project/.circleci/ansible/inventory.txt
       - destroy-environment
 
+  configure-infrastructure:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["db:1e:88:e7:91:5e:05:75:e0:81:cd:8a:43:bc:a0:e8"] 
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update tar
+            apk add --update gzip
+            apk add --update ansible
+      - run:
+          name: Configure server
+          command: |
+              cd .circleci/ansible
+              ansible-playbook -i inventory.txt configure-server.yml
+
 
 
 workflows:
@@ -174,3 +195,4 @@ workflows:
       #     requires: [build-backend]
       #     context: UDAPEOPLE_SLACK
       - deploy-infrastructure
+      - configure-infrastructure
