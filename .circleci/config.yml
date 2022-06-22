@@ -5,14 +5,15 @@ commands:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
       tag:
-        default: ""
+        default: "${CIRCLE_WORKFLOW_ID:0:7}"
         type: string
     steps:
       - run:
           name: Destroy environments
           when: on_fail
           command: |
-            aws cloudformation delete-stack --stack-name <<parameters.tag>>-${CIRCLE_WORKFLOW_ID:0:7}
+            aws cloudformation delete-stack --stack-name backend-.to
+            aws cloudformation delete-stack --stack-name frontend-.to
 
 defaults: &defaults
   docker:
