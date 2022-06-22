@@ -145,7 +145,7 @@ jobs:
               --filters \
               "Name=tag:Name,Values=backend-73a5bb6" \
               --query 'Reservations[*].Instances[*].[PublicIpAddress]' \
-              --output text >> inventory.txt
+              --output text >> .circleci/ansible/inventory.txt
 
       - persist_to_workspace:
           root: ~/
