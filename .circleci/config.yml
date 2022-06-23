@@ -237,14 +237,14 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export BACKEND_IP=$(aws --region us-east-1 \
+            BACKEND_IP=$(aws --region us-east-1 \
               ec2 describe-instances \
               --filters \
               "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].[PublicIpAddress]' \
-              --output text >> .circleci/ansible/inventory.txt)
+              --output text)
 
-            export API_URL="http://${BACKEND_IP}:3030" 
+            API_URL="http://${BACKEND_IP}:3030" 
             echo "API_URL = ${API_URL}"
             echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
             cat frontend/.env
@@ -309,14 +309,14 @@ jobs:
           name: Backend smoke test.
           command: |
             # Fetch and prepare the BACKEND_IP env var
-              export BACKEND_IP=$(aws --region us-east-1 \
+              BACKEND_IP=$(aws --region us-east-1 \
               ec2 describe-instances \
               --filters \
               "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].[PublicIpAddress]' \
-              --output text >> .circleci/ansible/inventory.txt)
+              --output text)
 
-              export API_URL="http://${BACKEND_IP}:3030"
+              API_URL="http://${BACKEND_IP}:3030"
               echo "${API_URL}"
               if curl "${API_URL}/api/status" | grep "ok"
               then
@@ -368,14 +368,14 @@ jobs:
       - run:
           name: Get old stack workflow id
           command: |
-            export OldWorkflowID=$(aws cloudformation \
+            OldWorkflowID=$(aws cloudformation \
                     list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
                     --no-paginate --output text)
             echo OldWorkflowID: "${OldWorkflowID}"
             echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
 
             # Fetch the stack names  
-            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+            STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
                     --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
             echo Stack names: "${STACKS[@]}" 
       - run:
