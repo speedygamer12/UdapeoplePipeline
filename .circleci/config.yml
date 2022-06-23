@@ -222,12 +222,14 @@ jobs:
 
   deploy-frontend:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/bnode
     steps:
       - checkout
-      - install_awscli
-      - install_nodejs
-      - install_tar
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt-get update && sudo apt-get install -y tar \
+              && sudo apt-get install -y aws-cli
 
       - attach_workspace:
           at: ~/
