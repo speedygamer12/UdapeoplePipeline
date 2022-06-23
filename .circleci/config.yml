@@ -172,7 +172,7 @@ jobs:
       - run:
           name: Configure server
           command: |
-            cat ~/project/.circleci/ansible/inventory.txt
+            cat `.circleci/ansible/inventory.txt
       - run:
           name: Configure server
           command: |
@@ -204,8 +204,7 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
-      - attach_workspace:
-          at: ~/
+      
       - run:
           name: Install dependencies
           command: |
@@ -216,6 +215,9 @@ jobs:
             yum install -y npm
             yum install -y ansible            
             yum install -y awscli
+
+      - attach_workspace:
+          at: ~/
 
       - run:
           name: Get backend url
