@@ -209,10 +209,12 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            yum install -y python3
-            yum install -y ansible
+            yum install -y tar
+            yum install -y ansible 
+            yum install -y python3           
             yum install -y node
             yum install -y npm
+            yum install -y ansible            
             yum install -y awscli
 
       - run:
@@ -269,6 +271,7 @@ jobs:
             cd ..
             # Zip the directory
             tar -C backend -czvf artifact.tar.gz .
+            ls
             cd .circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
