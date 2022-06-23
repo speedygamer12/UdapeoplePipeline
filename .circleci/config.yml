@@ -229,7 +229,7 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update tar
-            apk add --update awscli
+            apk add --update aws-cli
             apk add --update nodejs npm
             apk add --update npm
 
@@ -306,7 +306,7 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update curl
-            apk add --update awscli
+            apk add --update aws-cli
             apk add --update nodejs npm
             apk add --update npm
       - run:
