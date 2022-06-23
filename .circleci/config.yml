@@ -221,7 +221,8 @@ jobs:
     #  Here's where you will add some code to rollback on failure   
 
   deploy-frontend:
-    - image: python:3.7-alpine3.11
+      docker:
+      - image: python:3.7-alpine3.11
     steps:
       - checkout
       - run:
@@ -354,7 +355,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |  
-            yum install -y awscli
+            yum install -y tar 
 
       - run:
           name: Update cloudfront distribution
