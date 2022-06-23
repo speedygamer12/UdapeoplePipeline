@@ -297,14 +297,13 @@ jobs:
 
   smoke-test:
     docker:
-      - image: circleci/node:13.8.0
+      - image: amazon/aws-cli
     steps:
       - checkout
       - run:
           name: Install dependencies
-          command: |
-            sudo apt-get update && sudo apt-get install -y tar \
-              && sudo apt-get install -y awscli && sudo apt-get install -y curl
+          command: |  
+            yum install -y curl 
       - run:
           name: Get backend url
           command: |
