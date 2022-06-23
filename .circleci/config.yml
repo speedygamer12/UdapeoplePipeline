@@ -4,7 +4,7 @@ commands:
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
-      tag:
+      workflow_id:
         default: "${CIRCLE_WORKFLOW_ID:0:7}"
         type: string
     steps:
@@ -12,8 +12,28 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
+            echo "Destroying environment: << parameters.workflow_id >> "
             aws cloudformation delete-stack --stack-name udapeople-backend--${CIRCLE_WORKFLOW_ID:0:}
             aws cloudformation delete-stack --stack-name udapeople-frontend--${CIRCLE_WORKFLOW_ID:0:5}
+    
+  revert-migrations:
+    description: Revert the last migration if successfully run in the current workflow.
+    parameters:
+      workflow_id:
+        type: string     
+    steps:
+      - run:
+          name: Revert migrations
+          when: on_fail
+          command: |
+            SUCCESS=$(curl --insecure  https://kvdb.io/9k5UZZpjyaAp6V5VnbjE1w/migration_<< parameters.workflow_id >>)
+            if(( $SUCCESS==1 )); 
+            then
+              cd ~/project/backend
+              npm install
+              npm run migration:revert
+              exit 1
+            fi
 
 defaults: &defaults
   docker:
@@ -209,11 +229,9 @@ jobs:
           name: Install dependencies
           command: |
             yum install -y tar
-            yum install -y ansible 
             yum install -y python3           
             yum install -y node
             yum install -y npm
-            yum install -y ansible            
             yum install -y awscli
 
       - attach_workspace:
