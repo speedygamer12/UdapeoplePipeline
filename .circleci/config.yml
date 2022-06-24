@@ -14,8 +14,8 @@ commands:
           command: |
             echo "Destroying environment: << parameters.workflow_id >> "
             aws s3 rm "s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}" --recursive
-            aws cloudformation delete-stack --stack-name dapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
-            aws cloudformation delete-stack --stack-name dapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+            aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+            aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
     
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -172,7 +172,7 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      # - destroy-environment
+      - destroy-environment
 
   configure-infrastructure:
     docker:
@@ -190,6 +190,9 @@ jobs:
             apk add --update gzip
             apk add --update ansible
             apk add --update openssh
+            python -m pip install awscli
+      - restore_cache:
+          keys: [backend-build]
       - run:
           name: Configure server
           command: |
@@ -200,7 +203,7 @@ jobs:
             cd ~/project/.circleci/ansible && \
             ansible-playbook -i inventory.txt configure-server.yml
           no_output_timeout: 30m
-      # - destroy-environment
+      - destroy-environment
 
   run-migrations:
     <<: *defaults
@@ -208,6 +211,16 @@ jobs:
       - checkout
       - restore_cache:
           keys: [backend-build]
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt-get update -y && sudo apt-get install -y python3 \
+            python3-pip python3-setuptools groff less -y && sudo pip3 install --upgrade pip \
+            && sudo apt-get clean && sudo apt-get install curl
+      - run:
+          name: Install awscli
+          command: |
+            pip3 --no-cache-dir install --upgrade awscli
       - run:
           name: Run migrations
           command: |
@@ -222,13 +235,16 @@ jobs:
             then
               curl https://kvdb.io/NjA8xwQKGfigPGawPBRW5g/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
-    # - destroy-environment
+    - destroy-environment
+    - revert-migrations
 
   deploy-frontend:
     docker:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - restore_cache:
+          keys: [frontend-build]
       - run:
           name: Install dependencies
           command: |
@@ -241,14 +257,14 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            BACKEND_IP=$(aws --region us-east-1 \
+            export BACKEND_IP=$(aws --region us-east-1 \
               ec2 describe-instances \
               --filters \
               "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].[PublicIpAddress]' \
               --output text)
 
-            API_URL="http://${BACKEND_IP}:3030" 
+            export API_URL="http://${BACKEND_IP}:3030" 
             echo "API_URL = ${API_URL}"
             echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
             cat frontend/.env
@@ -262,13 +278,16 @@ jobs:
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
 
-      # - destroy-environment
+      - destroy-environment
+      - revert-migrations
 
   deploy-backend:
     docker:
       - image: python:3.7-alpine3.11
     steps:
       - checkout
+      - restore_cache:
+          keys: [backend-build]
       - add_ssh_keys:
           fingerprints: ["db:1e:88:e7:91:5e:05:75:e0:81:cd:8a:43:bc:a0:e8"] 
       - attach_workspace:
@@ -297,7 +316,9 @@ jobs:
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
-      # - destroy-environment
+
+      - destroy-environment
+      - revert-migrations
 
   smoke-test:
     docker:
@@ -341,8 +362,8 @@ jobs:
               exit 1
             fi
             
-      # - destroy-environment
-      # - revert-migration 
+      - destroy-environment
+      - revert-migration 
 
   cloudfront-update:
     docker:

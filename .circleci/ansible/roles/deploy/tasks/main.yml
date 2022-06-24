@@ -1,5 +1,7 @@
 ---
+
 - name: ensure artifact directory exists
+  become: true
   file:
     path: ~/artifact
     state: directory
@@ -11,6 +13,7 @@
     dest: ~/artifact
 
 - name: "start app"
+  become: true
   shell: |
     cd ~/artifact
     npm install 
