@@ -1,4 +1,9 @@
 ---
+- name: ensure artifact directory exists
+  file:
+    path: ~/artifact
+    state: directory
+
 - name: "extract archived artifact"
   become: true
   unarchive:
