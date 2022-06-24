@@ -172,7 +172,7 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      - destroy-environment
+      # - destroy-environment
 
   configure-infrastructure:
     docker:
@@ -200,11 +200,14 @@ jobs:
             cd ~/project/.circleci/ansible && \
             ansible-playbook -i inventory.txt configure-server.yml
           no_output_timeout: 30m
+      # - destroy-environment
 
   run-migrations:
     <<: *defaults
     steps:
       - checkout
+      - restore_cache:
+          keys: [backend-build]
       - run:
           name: Run migrations
           command: |
@@ -218,7 +221,7 @@ jobs:
             then
               curl https://kvdb.io/9k5UZZpjyaAp6V5VnbjE1w/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
-    #  Here's where you will add some code to rollback on failure   
+    # - destroy-environment
 
   deploy-frontend:
     docker:
@@ -258,7 +261,7 @@ jobs:
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
 
-      # Here's where you will add some code to rollback on failure  
+      # - destroy-environment
 
   deploy-backend:
     docker:
@@ -293,7 +296,7 @@ jobs:
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
-      # Here's where you will add some code to rollback on failure  
+      - destroy-environment
 
   smoke-test:
     docker:
@@ -336,7 +339,6 @@ jobs:
             else
               exit 1
             fi
-      # Here's where you will add some code to rollback on failure  
       # - destroy-environment
       # - revert-migration 
 
@@ -358,8 +360,8 @@ jobs:
             --stack-name InitialStack \
             --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
             --tags project=udapeople
-      # Here's where you will add some code to rollback on failure  
-
+      # - destroy-environment
+      # - revert-migration 
   cleanup:
     docker:
       - image: amazon/aws-cli

@@ -18,7 +18,6 @@
       wait_for_connection:  
         delay: 120
         timeout: 600
-      
 
     - name: "update apt packages"
       become: true
@@ -45,4 +44,4 @@
     - TYPEORM_MIGRATIONS_DIR: "{{ lookup('env', 'TYPEORM_MIGRATIONS_DIR')}}"
 
   roles:
-    - newrole
+    - configure-server
