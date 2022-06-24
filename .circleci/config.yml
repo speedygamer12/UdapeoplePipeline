@@ -240,7 +240,12 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            BACKEND_IP=$(http://50.17.122.124)
+            BACKEND_IP=$(aws --region us-east-1 \
+              ec2 describe-instances \
+              --filters \
+              "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].[PublicIpAddress]' \
+              --output text)
 
             API_URL="http://${BACKEND_IP}:3030" 
             echo "API_URL = ${API_URL}"
@@ -253,8 +258,8 @@ jobs:
             cd frontend
             npm install
             npm run build
-            tar -czvf artifact-"697d33b".tar.gz dist
-            aws s3 cp dist s3://udapeople-697d33b --recursive
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
 
       # - destroy-environment
 
@@ -265,15 +270,8 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints: ["db:1e:88:e7:91:5e:05:75:e0:81:cd:8a:43:bc:a0:e8"] 
-      
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - project/.circleci/ansible/inventory.txt
-
       - attach_workspace:
           at: ~/
-    
       - run:
           name: Install dependencies
           command: |
@@ -298,7 +296,6 @@ jobs:
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
-          no_output_timeout: 30m
       # - destroy-environment
 
   smoke-test:
@@ -315,7 +312,12 @@ jobs:
           name: Backend smoke test.
           command: |
             # Fetch and prepare the BACKEND_IP env var
-              BACKEND_IP=$(http://50.17.122.124)
+              BACKEND_IP=$(aws --region us-east-1 \
+              ec2 describe-instances \
+              --filters \
+              "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].[PublicIpAddress]' \
+              --output text)
 
               API_URL="http://${BACKEND_IP}:3030"
               echo "${API_URL}"
@@ -328,7 +330,7 @@ jobs:
       - run:
           name: Frontend smoke test.
           command: |
-            URL="http://udapeople-697d33b.s3-website-us-east-1.amazonaws.com/#/employees"            
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"            
             echo ${URL} 
             if curl -s ${URL} | grep "Welcome"
             then
@@ -357,7 +359,7 @@ jobs:
             aws cloudformation deploy \
             --template-file .circleci/files/cloudfront.yml \
             --stack-name InitialStack \
-            --parameter-overrides WorkflowID="udapeople-697d33b" \
+            --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
             --tags project=udapeople
       # - destroy-environment
       # - revert-migration 
@@ -395,26 +397,26 @@ workflows:
     jobs:
       - build-frontend
       - build-backend
-      # - test-frontend:
-      #     requires: [build-frontend]
-      # - test-backend:
-      #     requires: [build-backend]
+      - test-frontend:
+          requires: [build-frontend]
+      - test-backend:
+          requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
           context: UDAPEOPLE_SLACK
-      # - scan-backend:
-      #     requires: [build-backend]
-      #     context: UDAPEOPLE_SLACK
-      # - deploy-infrastructure:
-      #     requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-      # - configure-infrastructure:
-      #     requires: [deploy-infrastructure]
-      - run-migrations:
+      - scan-backend:
           requires: [build-backend]
-      # - deploy-frontend:
-      #     requires: [run-migrations]
+          context: UDAPEOPLE_SLACK
+      - deploy-infrastructure:
+          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
+      - run-migrations:
+          requires: [configure-infrastructure]
+      - deploy-frontend:
+          requires: [run-migrations]
       - deploy-backend:
           requires: [run-migrations]
       - smoke-test:
-          requires: [deploy-backend]
+          requires: [deploy-backend, deploy-frontend]
 
