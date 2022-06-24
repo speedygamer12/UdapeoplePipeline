@@ -30,3 +30,8 @@
     global: yes
     production: yes
     state: present
+
+- name: ensure artifact directory exists
+  file:
+    path: ~/artifact
+    state: directory
