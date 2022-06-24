@@ -21,6 +21,7 @@ commands:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
       workflow_id:
+        default: "${CIRCLE_WORKFLOW_ID:0:7}"
         type: string     
     steps:
       - run:
@@ -363,7 +364,7 @@ jobs:
             fi
             
       - destroy-environment
-      - revert-migration 
+      - revert-migrations
 
   cloudfront-update:
     docker:
