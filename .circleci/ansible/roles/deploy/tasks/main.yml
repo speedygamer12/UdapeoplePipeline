@@ -20,12 +20,12 @@
       owner: ubuntu
       mode: 0777
 
-# - name: "Unzip backend files"
-#   become: true
-#   shell: |
-#     cd ./artifact
-#     tar xvzf ./artifact/artifact.tar.gz
-#     rm -rf ./artifact.tar.gz
+- name: "Unzip backend files"
+  become: true
+  shell: |
+    cd ./artifact
+    tar xvzf artifact.tar.gz .
+    rm -rf ./artifact.tar.gz
   
 
 # - name: "start app"
