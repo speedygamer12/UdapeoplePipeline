@@ -9,7 +9,7 @@
 - name: "extract archived artifact"
   become: true
   unarchive:
-    src: root/project/artifact.tar.gz
+    src: files/artifact.tar.gz
     dest: ./artifact
 
 - name: "random"
