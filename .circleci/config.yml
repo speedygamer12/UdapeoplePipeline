@@ -68,21 +68,17 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
-      # - restore_cache:
-      #     keys: [backend-build]
-      # - run:
-      #     name: Back-end build
-      #     command: |
-      #       cd backend
-      #       npm install
-      #       npm run build
-      # - save_cache:
-      #     paths: [backend/node_modules]
-      #     key: backend-build
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - project/.circleci/ansible/inventory.txt
+      - restore_cache:
+          keys: [backend-build]
+      - run:
+          name: Back-end build
+          command: |
+            cd backend
+            npm install
+            npm run build
+      - save_cache:
+          paths: [backend/node_modules]
+          key: backend-build
   
   test-frontend:
     <<: *defaults
@@ -140,21 +136,21 @@ jobs:
           event: fail
           template: basic_fail_1
           channel: udapeople-devops
-        
+
   deploy-infrastructure:
     docker:
       - image: amazon/aws-cli
     steps:
       - checkout
       - run: yum install -y tar gzip
-      - run:
+      - run: 
           name: Ensure back-end infrastructure exists
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
               --tags project=udapeople \
-              --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"   
+              --stack-name udapeople-backend-9dcd925 \
+              --parameter-overrides ID="9dcd925"   
       - run:
           name: Ensure front-end infrastructure exist
           command: |
@@ -162,7 +158,12 @@ jobs:
               --template-file .circleci/files/frontend.yml \
               --tags project=udapeople \
               --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7} \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+              --parameter-overrides ID="aws --region us-east-1 \
+              ec2 describe-instances \
+              --filters \
+              "Name=tag:Name,Values=backend-9dcd925" \
+              --query 'Reservations[*].Instances[*].[PublicIpAddress]' \
+              --output text >> .circleci/ansible/inventory.txt"
       - run:
           name: Add back-end ip to ansible inventory
           command: |
@@ -195,24 +196,16 @@ jobs:
             apk add --update ansible
             apk add --update openssh
             python -m pip install awscli
-            apk add --update nodejs npm
-            apk add --update npm
       - restore_cache:
           keys: [backend-build]
-      # - run:
-      #     name: Configure server
-      #     command: |
-      #       cat .circleci/ansible/inventory.txt
-      #       cd .circleci/ansible 
-      #       ansible-playbook -i inventory.txt configure-server.yml
-      #     no_output_timeout: 30m
       - run:
-          name: Deploy backend
+          name: Configure server
           command: |
+            cat .circleci/ansible/inventory.txt
             cd .circleci/ansible 
-            cat inventory.txt
-            ansible-playbook -i inventory.txt deploy-backend.yml
-      # - destroy-environment
+            ansible-playbook -i inventory.txt configure-server.yml
+          no_output_timeout: 30m
+      - destroy-environment
 
   run-migrations:
     <<: *defaults
@@ -320,7 +313,6 @@ jobs:
             cd ..
             # Zip the directory
             tar -C backend -czvf artifact.tar.gz .
-            ls
             cd .circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
@@ -403,15 +395,12 @@ jobs:
       - run:
           name: Get old stack workflow id
           command: |
-            OldWorkflowID=$(aws cloudformation \
-                    list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-                    --no-paginate --output text)
+            OldWorkflowID = OldWorkflowID=$(cat ~/OldWorkflowID.txt)
             echo OldWorkflowID: "${OldWorkflowID}"
             echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
 
             # Fetch the stack names  
-            STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-                    --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
+            STACKS=$(cat ~/Stacks.txt)
             echo Stack names: "${STACKS}" 
       - run:
           name: Remove old stacks and files
@@ -425,43 +414,38 @@ jobs:
 
 workflows:
 
-  # my_work_flow:
-  #   jobs:
-  #     - build-frontend
-  #     - build-backend
-  #     - test-frontend:
-  #         requires: [build-frontend]
-  #     - test-backend:
-  #         requires: [build-backend]
-  #     - scan-frontend:
-  #         requires: [build-frontend]
-  #         context: UDAPEOPLE_SLACK
-  #     - scan-backend:
-  #         requires: [build-backend]
-  #         context: UDAPEOPLE_SLACK
-  #     - deploy-infrastructure:
-  #         requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-  #         filters:
-  #           branches:
-  #             only: [main]
-  #     - configure-infrastructure:
-  #         requires: [deploy-infrastructure]
-  #     - run-migrations:
-  #         requires: [configure-infrastructure]
-  #     - deploy-frontend:
-  #         requires: [run-migrations]
-  #     - deploy-backend:
-  #         requires: [run-migrations]
-  #     - smoke-test:
-  #         requires: [deploy-backend, deploy-frontend]
-  #     - cloudfront-update:
-  #         requires: [smoke-test]
-  #     - cleanup:
-  #         requires: [cloudfront-update]
-
-  test_workflow:
+  my_work_flow:
     jobs:
       # - build-frontend
-      - build-backend
-      - configure-infrastructure:
-          requires: [build-backend]
+      # - build-backend
+      # - test-frontend:
+      #     requires: [build-frontend]
+      # - test-backend:
+      #     requires: [build-backend]
+      # - scan-frontend:
+      #     requires: [build-frontend]
+      #     context: UDAPEOPLE_SLACK
+      # - scan-backend:
+      #     requires: [build-backend]
+      #     context: UDAPEOPLE_SLACK
+      # - deploy-infrastructure:
+      #     requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+      #     filters:
+      #       branches:
+      #         only: [main]
+      # - configure-infrastructure:
+      #     requires: [deploy-infrastructure]
+      # - run-migrations:
+      #     requires: [configure-infrastructure]
+      # - deploy-frontend:
+      #     requires: [run-migrations]
+      # - deploy-backend:
+      #     requires: [run-migrations]
+      # - smoke-test:
+      #     requires: [deploy-backend, deploy-frontend]
+      # - cloudfront-update:
+      #     requires: [smoke-test]
+      - cleanup
+          # requires: [cloudfront-update]
+
+    
