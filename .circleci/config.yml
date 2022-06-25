@@ -395,12 +395,12 @@ jobs:
       - run:
           name: Get old stack workflow id
           command: |
-            OldWorkflowID = OldWorkflowID=$(cat ~/OldWorkflowID.txt)
+            OldWorkflowID = OldWorkflowID=$(cat OldWorkflowID.txt)
             echo OldWorkflowID: "${OldWorkflowID}"
             echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
 
             # Fetch the stack names  
-            STACKS=$(cat ~/Stacks.txt)
+            STACKS=$(cat Stacks.txt)
             echo Stack names: "${STACKS}" 
       - run:
           name: Remove old stacks and files
