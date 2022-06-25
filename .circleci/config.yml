@@ -79,6 +79,10 @@ jobs:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - project/.circleci/ansible/inventory.txt
   
   test-frontend:
     <<: *defaults
@@ -191,16 +195,33 @@ jobs:
             apk add --update ansible
             apk add --update openssh
             python -m pip install awscli
+            apk add --update nodejs npm
+            apk add --update npm
       - restore_cache:
           keys: [backend-build]
+      # - run:
+      #     name: Configure server
+      #     command: |
+      #       cat .circleci/ansible/inventory.txt
+      #       cd .circleci/ansible 
+      #       ansible-playbook -i inventory.txt configure-server.yml
+      #     no_output_timeout: 30m
       - run:
-          name: Configure server
-          command: |
-            cat .circleci/ansible/inventory.txt
-            cd .circleci/ansible 
-            ansible-playbook -i inventory.txt configure-server.yml
-          no_output_timeout: 30m
-      - destroy-environment
+          name: Deploy backend
+          # command: |
+          #   cd backend
+          #   npm i
+          #   npm run build
+          #   cd ..
+          #   # Zip the directory
+          #   tar -C backend -czvf artifact.tar.gz .
+          #   ls
+          #   pwd
+          #   cd .circleci/ansible
+          #   echo "Contents  of the inventory.txt file is -------"
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+      # - destroy-environment
 
   run-migrations:
     <<: *defaults
@@ -308,6 +329,7 @@ jobs:
             cd ..
             # Zip the directory
             tar -C backend -czvf artifact.tar.gz .
+            ls
             cd .circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
@@ -412,38 +434,43 @@ jobs:
 
 workflows:
 
-  my_work_flow:
-    jobs:
-      - build-frontend
-      - build-backend
-      - test-frontend:
-          requires: [build-frontend]
-      - test-backend:
-          requires: [build-backend]
-      - scan-frontend:
-          requires: [build-frontend]
-          context: UDAPEOPLE_SLACK
-      - scan-backend:
-          requires: [build-backend]
-          context: UDAPEOPLE_SLACK
-      - deploy-infrastructure:
-          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-          filters:
-            branches:
-              only: [main]
-      - configure-infrastructure:
-          requires: [deploy-infrastructure]
-      - run-migrations:
-          requires: [configure-infrastructure]
-      - deploy-frontend:
-          requires: [run-migrations]
-      - deploy-backend:
-          requires: [run-migrations]
-      - smoke-test:
-          requires: [deploy-backend, deploy-frontend]
-      - cloudfront-update:
-          requires: [smoke-test]
-      - cleanup:
-          requires: [cloudfront-update]
+  # my_work_flow:
+  #   jobs:
+  #     - build-frontend
+  #     - build-backend
+  #     - test-frontend:
+  #         requires: [build-frontend]
+  #     - test-backend:
+  #         requires: [build-backend]
+  #     - scan-frontend:
+  #         requires: [build-frontend]
+  #         context: UDAPEOPLE_SLACK
+  #     - scan-backend:
+  #         requires: [build-backend]
+  #         context: UDAPEOPLE_SLACK
+  #     - deploy-infrastructure:
+  #         requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+  #         filters:
+  #           branches:
+  #             only: [main]
+  #     - configure-infrastructure:
+  #         requires: [deploy-infrastructure]
+  #     - run-migrations:
+  #         requires: [configure-infrastructure]
+  #     - deploy-frontend:
+  #         requires: [run-migrations]
+  #     - deploy-backend:
+  #         requires: [run-migrations]
+  #     - smoke-test:
+  #         requires: [deploy-backend, deploy-frontend]
+  #     - cloudfront-update:
+  #         requires: [smoke-test]
+  #     - cleanup:
+  #         requires: [cloudfront-update]
 
-    
+  test_workflow:
+    jobs:
+      # - build-frontend
+      # - build-backend
+      - configure-infrastructure
+          # requires: [build-frontend, build-backend]
