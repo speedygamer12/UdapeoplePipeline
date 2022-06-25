@@ -16,7 +16,7 @@
   become: true
   copy:
       src: /root/project/artifact.tar.gz
-      dest: "~/artifact"
+      dest: "./artifact"
       owner: ubuntu
       mode: 0777
 
