@@ -1,2 +1,0 @@
-udapeople-frontend-b246vd0
-udapeople-backend-b246vd0
