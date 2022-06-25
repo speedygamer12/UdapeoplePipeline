@@ -3,7 +3,7 @@
 - name: ensure artifact directory exists
   become: true
   file:
-    path: ./artifact
+    path: ./artifacts
     state: directory
 
 # - name: "extract archived artifact"
