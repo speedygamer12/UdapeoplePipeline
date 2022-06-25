@@ -195,15 +195,17 @@ jobs:
             apk add --update ansible
             apk add --update openssh
             python -m pip install awscli
+            apk add --update nodejs npm
+            apk add --update npm
       - restore_cache:
           keys: [backend-build]
-      - run:
-          name: Configure server
-          command: |
-            cat .circleci/ansible/inventory.txt
-            cd .circleci/ansible 
-            ansible-playbook -i inventory.txt configure-server.yml
-          no_output_timeout: 30m
+      # - run:
+      #     name: Configure server
+      #     command: |
+      #       cat .circleci/ansible/inventory.txt
+      #       cd .circleci/ansible 
+      #       ansible-playbook -i inventory.txt configure-server.yml
+      #     no_output_timeout: 30m
       - run:
           name: Deploy backend
           command: |
