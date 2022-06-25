@@ -397,12 +397,12 @@ jobs:
           command: |
             ls
             cd .circleci
-            OldWorkflowID = OldWorkflowID=$(cat OldWorkflowID.txt)
+            export OldWorkflowID = OldWorkflowID=$(cat OldWorkflowID.txt)
             echo OldWorkflowID: "${OldWorkflowID}"
             echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
 
             # Fetch the stack names  
-            STACKS=$(cat Stacks.txt)
+            export STACKS=$(cat Stacks.txt)
             echo Stack names: "${STACKS}" 
       - run:
           name: Remove old stacks and files
