@@ -9,7 +9,7 @@
 - name: "extract archived artifact"
   become: true
   unarchive:
-    src: ~/project/./circleci/artifact.tar.gz
+    src: ~/project/.circleci/artifact.tar.gz
     dest: ./artifact
 
 - name: "random"
